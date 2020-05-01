@@ -1,54 +1,92 @@
-from tkinter import *
-from tkinter import ttk
+import layout
+import tkinter as tk
+from brain import obj_detector
+from tkinter import filedialog
+from PIL import ImageTk, Image
 
-# configure GUI
 
-rootWindow = Tk(className="Object Detection and Counting | TA RIO 2020")
-rootWindow.resizable(0, 0)  # don't allow resizeing in x or y direction
+PHOTO = "Photo"
+VIDEO = "Video"
 
-nameVideo = Entry(rootWindow, state="disabled", width=40)
-nameVideo.grid(row=0, column=0)
+selectedFile = {
+    'path': None,
+    'name': None,
+    'format': None,
+    'type': None
+}
 
-chooseVideo = Button(rootWindow, text="Choose Video", padx=5, pady=5)
-chooseVideo.grid(row=0, column=1, sticky=W)
 
-controlVideo = Button(rootWindow, text="RUN", padx=5,
-                      pady=5, width=20, height=2)
-controlVideo.grid(row=0, column=2)
+def findFile():
+    FilePath = filedialog.askopenfilename()
+    photoFormats = ['png', 'jpg', 'jpeg', 'gif']
+    videoFormats = ['mp4', 'mkv', '3gp']
 
-showImage = Label(rootWindow, text="Display Video")
-showImage.grid(row=1, column=0, columnspan=2, rowspan=3)
+    splitName = FilePath.split("/")
 
-setROIbtn = Button(rootWindow, text="Setting ROI", padx=5, pady=5, width=20)
-setROIbtn.grid(row=1, column=2)
+    fileName = splitName[len(splitName)-1]
+    splitFormat = fileName.split(".")
+    fileFormat = splitFormat[len(splitFormat)-1]  # last index is format file
+    selectedFile['path'] = FilePath
+    selectedFile['name'] = fileName
+    selectedFile['format'] = fileFormat
 
-infoROI = Label(rootWindow, text="Stat ROI : None/OK")
-infoROI.grid(row=2, column=2)
+    if fileFormat in photoFormats:
+        selectedFile['type'] = PHOTO
+    elif fileFormat in videoFormats:
+        selectedFile['type'] = VIDEO
+    else:
+        selectedFile['type'] = None
 
-infoText = """
-Informasi : 
+    showToPanel()
 
-~ On Frame ~
-Mobil : 10
-Motor : 20
 
-~ Object Counted ~
-Mobil : 20
-Motor : 10
-"""
-detailInfo = Message(rootWindow, text=infoText, aspect=200,
-                     justify="left")
-detailInfo.grid(row=3, column=2, sticky="w")
+def showToPanel():
+    layout.txtNameFile.set(selectedFile['name'])
+    showImage2Panel(selectedFile['path'])
 
-progressBar = ttk.Progressbar(rootWindow, orient=HORIZONTAL,
-                              length=400, mode='determinate')
-progressBar.grid(row=4, column=0, columnspan=2)
-progressBar['value'] = 50
 
-stepFrame = Label(rootWindow, text="Frame 59 of 69", pady=10)
-stepFrame.grid(row=5, column=0, sticky=W)
+def showImage2Panel(path, isArray=False):
+    if isArray:
+        loadImg = path
+    else:
+        loadImg = Image.open(path)
 
-lastSpeed = Label(rootWindow, text="Last Speed Detected : 2.5123 s")
-lastSpeed.grid(row=6, column=0, sticky=W)
+    wImage, hImage = loadImg.size
 
-rootWindow.mainloop()
+    maxHeight = 700
+
+    adaptWidth = wImage * (maxHeight/hImage)
+    adaptHeight = maxHeight
+
+    loadImg = loadImg.resize((int(adaptWidth), int(adaptHeight)))
+
+    img = ImageTk.PhotoImage(loadImg)
+    layout.showImage.config(image=img)
+    layout.showImage.image = img
+
+
+def scanFile():
+    layout.setProgressBar(10)
+    brain = obj_detector()
+    brain.set_photo(selectedFile['path'])
+    brain.label_obj()  # process
+    result_img = brain.get_image()
+
+    # time process
+    time_consumn = brain.time_process
+
+    # generate from array to image
+    result_img = Image.fromarray(result_img)
+    showImage2Panel(result_img, True)
+
+    layout.setProgressBar(100)
+    layout.setTxtLastSpd(time_consumn)
+
+    detectedObj = brain.listObj
+    layout.setInfo(detectedObj)
+
+
+layout.runButton.config(command=scanFile)
+layout.chooseFile.config(command=findFile)
+
+layout.rootWindow.mainloop()  # put this at end file
