@@ -79,6 +79,9 @@ def setProgressBar(value):
 
 
 def setInfo(dataOnFrame, dataCounted=None):
+    if dataOnFrame is None:
+        txtInfoDetail.set("")
+        return True
     info = "Informasi :\n \n"
     info = "{}~ On Frame~\n".format(info)
     for k, v in dataOnFrame.items():
