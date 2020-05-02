@@ -6,13 +6,19 @@ class obj_detector:
     hasDetected = False
     detectedObj = []
     listObj = {}
+    netModel = None
 
-    def __init__(self):
-        self.net = cv.dnn.readNet('yolov3/yolov3.weights', 'yolov3/yolov3.cfg')
+    def __init__(self, weightModel, configModel, namesModel, netModel):
+        self.netModel = netModel
+        if netModel == "net" or netModel == "yolo":
+            self.net = cv.dnn.readNet(weightModel, configModel)
+        elif netModel == "tensorflow":
+            self.net = cv.dnn.readNetFromTensorflow(weightModel, configModel)
+
         # self.net = cv.dnn.readNet(
         #     'yolo_tiny/yolov3-tiny.weights', 'yolo_tiny/yolov3-tiny.cfg')
         self.classes = []
-        with open('yolov3/coco.names', 'r') as f:
+        with open(namesModel, 'r') as f:
             self.classes = [line.strip() for line in f.readlines()]
 
         layer_names = self.net.getLayerNames()
@@ -36,14 +42,18 @@ class obj_detector:
         # img = cv.resize(img, None, fx=0.4, fy=0.4)
         height, width, channels = img.shape
         net = self.net
-        blob = cv.dnn.blobFromImage(
-            img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+        if self.netModel == "yolo":
+            blob = cv.dnn.blobFromImage(
+                img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+        elif self.netModel == "tensorflow":
+            blob = cv.dnn.blobFromImage(img, size=(300, 300), swapRB=True)
         net.setInput(blob)
         outs = net.forward(self.output_layers)
 
         boxes = []
         class_ids = []
         confidences = []
+
         for out in outs:
             for detection in out:
                 scores = detection[5:]

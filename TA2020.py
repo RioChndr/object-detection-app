@@ -38,6 +38,7 @@ def findFile():
         selectedFile['type'] = None
 
     showToPanel()
+    layout.setInfo(None)
 
 
 def showToPanel():
@@ -67,7 +68,15 @@ def showImage2Panel(path, isArray=False):
 
 def scanFile():
     layout.setProgressBar(10)
-    brain = obj_detector()
+    # brain = obj_detector('yolov3/yolov3.weights',
+    #                      'yolov3/yolov3.cfg',
+    #                      'yolov3/coco.names',
+    #                       'net')
+    brain = obj_detector('coco_model/frozen_inference_graph.pb',
+                         'coco_model/ssd_mobilenet_v2_coco_2018_03_29.pbtxt',
+                         'coco_model/obj_name.txt',
+                         'tensorflow')
+    # 'yolov3/yolov3.weights',  'yolov3/yolov3.cfg', 'yolov3/coco.names'
     brain.set_photo(selectedFile['path'])
     brain.label_obj()  # process
     result_img = brain.get_image()
