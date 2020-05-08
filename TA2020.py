@@ -1,114 +1,150 @@
 import layout
 import tkinter as tk
 import cv2 as cv
-from brain import obj_detector
+from brain import obj_detector as brain_obj_detector
 from tkinter import filedialog
 from PIL import ImageTk, Image
 
+class ObjectDetector:
 
-PHOTO = "Photo"
-VIDEO = "Video"
+    PHOTO = "Photo"
+    VIDEO = "Video"
+    DELAYWINDOW = 100
 
-selectedFile = {
-    'path': None,
-    'name': None,
-    'format': None,
-    'type': None
-}
-brain = obj_detector('yolov3/yolov3.weights',
-                         'yolov3/yolov3.cfg',
-                         'yolov3/coco.names')
+    selectedFile = {
+        'path': None,
+        'name': None,
+        'format': None,
+        'type': None
+    }
+    brain = brain_obj_detector('yolov3/yolov3.weights',
+                            'yolov3/yolov3.cfg',
+                            'yolov3/coco.names')
 
-def findFile():
-    FilePath = filedialog.askopenfilename()
-    if FilePath is None:
-        return
-    photoFormats = ['png', 'jpg', 'jpeg', 'gif']
-    videoFormats = ['mp4', 'mkv', '3gp']
+    def findFile(self):
+        FilePath = filedialog.askopenfilename()
+        if FilePath is None:
+            return
+        photoFormats = ['png', 'jpg', 'jpeg', 'gif']
+        videoFormats = ['mp4', 'mkv', '3gp']
 
-    splitName = FilePath.split("/")
+        splitName = FilePath.split("/")
 
-    fileName = splitName[len(splitName)-1]
-    splitFormat = fileName.split(".")
-    fileFormat = splitFormat[len(splitFormat)-1]  # last index is format file
-    selectedFile['path'] = FilePath
-    selectedFile['name'] = fileName
-    selectedFile['format'] = fileFormat
-    print(FilePath)
+        fileName = splitName[len(splitName)-1]
+        splitFormat = fileName.split(".")
+        fileFormat = splitFormat[len(splitFormat)-1]  # last index is format file
+        self.selectedFile['path'] = FilePath
+        self.selectedFile['name'] = fileName
+        self.selectedFile['format'] = fileFormat
+        print(FilePath)
 
-    if fileFormat in photoFormats:
-        selectedFile['type'] = PHOTO
-    elif fileFormat in videoFormats:
-        selectedFile['type'] = VIDEO
-    else:
-        selectedFile['type'] = None
+        if fileFormat in photoFormats:
+            self.selectedFile['type'] = self.PHOTO
+        elif fileFormat in videoFormats:
+            self.selectedFile['type'] = self.VIDEO
+        else:
+            self.selectedFile['type'] = None
 
-    showToPanel()
-    layout.setInfo(None)
-
-
-def showToPanel():
-    layout.txtNameFile.set(selectedFile['name'])
-    if selectedFile['type'] == VIDEO:
-        showVideo2Panel()
-        return
-    showImage2Panel(selectedFile['path'])
+        self.showToPanel()
+        layout.setInfo(None)
 
 
-def showImage2Panel(path = None, frame= None):
-    if path is not None:
-        loadImg = Image.open(path)
-    elif frame is not None:
-        loadImg = frame
+    def showToPanel(self):
+        layout.txtNameFile.set(self.selectedFile['name'])
+        if self.selectedFile['type'] == self.VIDEO:
+            self.showVideo2Panel()
+            return
+        self.showImage2Panel(self.selectedFile['path'])
 
-    wImage, hImage = loadImg.size
 
-    maxHeight = 700
+    def showImage2Panel(self, path = None, frame= None):
+        if path is not None:
+            loadImg = Image.open(path)
+        elif frame is not None:
+            loadImg = frame
 
-    adaptWidth = wImage * (maxHeight/hImage)
-    adaptHeight = maxHeight
+        wImage, hImage = loadImg.size
 
-    loadImg = loadImg.resize((int(adaptWidth), int(adaptHeight)))
+        maxHeight = 700
 
-    img = ImageTk.PhotoImage(loadImg)
-    layout.showImage.config(image=img)
-    layout.showImage.image = img
+        adaptWidth = wImage * (maxHeight/hImage)
+        adaptHeight = maxHeight
 
-def showVideo2Panel():
-    cap = cv.VideoCapture(selectedFile['path'])
-    if cap.isOpened() == False:
-        layout.rootWindow.showerror("error", "file video tidak ditemukan")
-        return
+        loadImg = loadImg.resize((int(adaptWidth), int(adaptHeight)))
+
+        img = ImageTk.PhotoImage(loadImg)
+        layout.showImage.config(image=img)
+        layout.showImage.image = img
+
+    def showVideo2Panel(self):
+        
+        cap = self.brain.capture_video(self.selectedFile['path'])
+        # cap = cv.VideoCapture(self.selectedFile['path'])
+        if cap == False:
+            layout.rootWindow.showerror("error", "file video tidak ditemukan")
+            return
+        
+        frstFrame = self.brain.read_frame()
+        frstFrame = self.brain.cvrt_img(frstFrame)
+        frstFrame = Image.fromarray(frstFrame)
+        self.showImage2Panel(frame=frstFrame)
+
+
+    def runDetector(self):
+        if self.selectedFile['type'] == self.PHOTO:
+            self.detectorImage()
+        elif self.selectedFile['type'] == self.VIDEO:
+            self.detectorVideo()
+        else:
+            layout.rootWindow.showerror("error", "file video tidak ditemukan")
+            return False
+
+
+    def detectorImage(self):
+        
+        layout.setProgressBar(10)
+        
+        self.brain.set_photo(self.selectedFile['path'])
+        self.brain.label_obj()  # process
+        result_img = self.brain.get_image()
+
+        # time process
+        time_consumn = self.brain.time_process
+
+        # generate from array to image
+        result_img = Image.fromarray(result_img)
+        self.showImage2Panel(frame=result_img)
+
+        layout.setProgressBar(100)
+        layout.setTxtLastSpd(time_consumn)
+
+        detectedObj = self.brain.listObj
+        layout.setInfo(detectedObj)
     
-    ret, frstFrame = cap.read()
-    frstFrame = brain.cvrt_img(frstFrame)
-    frstFrame = Image.fromarray(frstFrame)
-    showImage2Panel(frame=frstFrame)
+    def detectorVideo(self):
+        self.updateDetectorVideo()
 
+    def updateDetectorVideo(self):
+        frame = self.brain.read_frame()
+        result = self.brain.detect_frame(frame)
 
-def scanFile():
-    global brain
-    layout.setProgressBar(10)
-    
-    brain.set_photo(selectedFile['path'])
-    brain.label_obj()  # process
-    result_img = brain.get_image()
+        # time process
+        time_consumn = self.brain.time_process
 
-    # time process
-    time_consumn = brain.time_process
+        # generate from array to image
+        result_img = Image.fromarray(result)
+        self.showImage2Panel(frame=result_img)
 
-    # generate from array to image
-    result_img = Image.fromarray(result_img)
-    showImage2Panel(frame=result_img)
+        layout.setTxtLastSpd(time_consumn)
 
-    layout.setProgressBar(100)
-    layout.setTxtLastSpd(time_consumn)
+        detectedObj = self.brain.listObj
+        layout.setInfo(detectedObj)
+        
+        layout.rootWindow.after(self.DELAYWINDOW, self.updateDetectorVideo)
 
-    detectedObj = brain.listObj
-    layout.setInfo(detectedObj)
+objDetector = ObjectDetector()
 
-
-layout.runButton.config(command=scanFile)
-layout.chooseFile.config(command=findFile)
+layout.runButton.config(command=objDetector.runDetector)
+layout.chooseFile.config(command=objDetector.findFile)
 
 layout.rootWindow.mainloop()  # put this at end file
