@@ -1,5 +1,6 @@
 import layout
 import tkinter as tk
+import cv2 as cv
 from brain import obj_detector
 from tkinter import filedialog
 from PIL import ImageTk, Image
@@ -14,10 +15,14 @@ selectedFile = {
     'format': None,
     'type': None
 }
-
+brain = obj_detector('yolov3/yolov3.weights',
+                         'yolov3/yolov3.cfg',
+                         'yolov3/coco.names')
 
 def findFile():
     FilePath = filedialog.askopenfilename()
+    if FilePath is None:
+        return
     photoFormats = ['png', 'jpg', 'jpeg', 'gif']
     videoFormats = ['mp4', 'mkv', '3gp']
 
@@ -29,6 +34,7 @@ def findFile():
     selectedFile['path'] = FilePath
     selectedFile['name'] = fileName
     selectedFile['format'] = fileFormat
+    print(FilePath)
 
     if fileFormat in photoFormats:
         selectedFile['type'] = PHOTO
@@ -43,14 +49,17 @@ def findFile():
 
 def showToPanel():
     layout.txtNameFile.set(selectedFile['name'])
+    if selectedFile['type'] == VIDEO:
+        showVideo2Panel()
+        return
     showImage2Panel(selectedFile['path'])
 
 
-def showImage2Panel(path, isArray=False):
-    if isArray:
-        loadImg = path
-    else:
+def showImage2Panel(path = None, frame= None):
+    if path is not None:
         loadImg = Image.open(path)
+    elif frame is not None:
+        loadImg = frame
 
     wImage, hImage = loadImg.size
 
@@ -65,12 +74,22 @@ def showImage2Panel(path, isArray=False):
     layout.showImage.config(image=img)
     layout.showImage.image = img
 
+def showVideo2Panel():
+    cap = cv.VideoCapture(selectedFile['path'])
+    if cap.isOpened() == False:
+        layout.rootWindow.showerror("error", "file video tidak ditemukan")
+        return
+    
+    ret, frstFrame = cap.read()
+    frstFrame = brain.cvrt_img(frstFrame)
+    frstFrame = Image.fromarray(frstFrame)
+    showImage2Panel(frame=frstFrame)
+
 
 def scanFile():
+    global brain
     layout.setProgressBar(10)
-    brain = obj_detector('yolov3/yolov3.weights',
-                         'yolov3/yolov3.cfg',
-                         'yolov3/coco.names')
+    
     brain.set_photo(selectedFile['path'])
     brain.label_obj()  # process
     result_img = brain.get_image()
@@ -80,7 +99,7 @@ def scanFile():
 
     # generate from array to image
     result_img = Image.fromarray(result_img)
-    showImage2Panel(result_img, True)
+    showImage2Panel(frame=result_img)
 
     layout.setProgressBar(100)
     layout.setTxtLastSpd(time_consumn)
