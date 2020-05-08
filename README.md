@@ -3,7 +3,9 @@
 - Install python3
 - Install PIP
 - install library opencv, pillow
+
 > pip install opencv-contrib-python3
+
 > pip install pillow
 
 download [YOLOv3 weights](https://pjreddie.com/media/files/yolov3.weights), [Read More YOLOv3](https://pjreddie.com/darknet/yolo/)
