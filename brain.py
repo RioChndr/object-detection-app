@@ -113,4 +113,7 @@ class obj_detector:
 
     def get_image(self):
         # Change from BGR (opencv) to RGB for tkinter
-        return cv.cvtColor(self.photo_target, cv.COLOR_BGR2RGB)
+        return self.cvrt_img(self.photo_target)
+        
+    def cvrt_img(self, img):
+        return cv.cvtColor(img, cv.COLOR_BGR2RGB)
