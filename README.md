@@ -12,5 +12,7 @@ put yolov3.weights to folder yolov3/yolov3.weights
 
 # Run
 > python3 TA2020.py
+
 or
+
 > python TA2020.py
