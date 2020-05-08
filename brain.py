@@ -6,17 +6,11 @@ class obj_detector:
     hasDetected = False
     detectedObj = []
     listObj = {}
-    netModel = None
+    
 
-    def __init__(self, weightModel, configModel, namesModel, netModel):
-        self.netModel = netModel
-        if netModel == "net" or netModel == "yolo":
-            self.net = cv.dnn.readNet(weightModel, configModel)
-        elif netModel == "tensorflow":
-            self.net = cv.dnn.readNetFromTensorflow(weightModel, configModel)
-
-        # self.net = cv.dnn.readNet(
-        #     'yolo_tiny/yolov3-tiny.weights', 'yolo_tiny/yolov3-tiny.cfg')
+    def __init__(self, weightModel, configModel, namesModel):
+        
+        self.net = cv.dnn.readNet(weightModel, configModel)
         self.classes = []
         with open(namesModel, 'r') as f:
             self.classes = [line.strip() for line in f.readlines()]
@@ -42,11 +36,8 @@ class obj_detector:
         # img = cv.resize(img, None, fx=0.4, fy=0.4)
         height, width, channels = img.shape
         net = self.net
-        if self.netModel == "yolo":
-            blob = cv.dnn.blobFromImage(
-                img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
-        elif self.netModel == "tensorflow":
-            blob = cv.dnn.blobFromImage(img, size=(300, 300), swapRB=True)
+        blob = cv.dnn.blobFromImage(
+            img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
         net.setInput(blob)
         outs = net.forward(self.output_layers)
 
