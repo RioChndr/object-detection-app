@@ -6,6 +6,7 @@ class obj_detector:
     hasDetected = False
     detectedObj = []
     listObj = {}
+    capVideo = None
     
 
     def __init__(self, weightModel, configModel, namesModel):
@@ -117,3 +118,17 @@ class obj_detector:
         
     def cvrt_img(self, img):
         return cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+    def capture_video(self, path):
+        self.capVideo = cv.VideoCapture(path)
+        return self.capVideo.isOpened()
+    
+    def read_frame(self):
+        ret, frame = self.capVideo.read()
+        return frame
+
+    def detect_frame(self, frame):
+        self.photo_target = frame
+        self.label_obj()
+        result = self.get_image()
+        return result
