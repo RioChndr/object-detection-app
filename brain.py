@@ -33,7 +33,7 @@ class obj_detector:
             img_ori = frame
         else:
             img_ori = self.photo_target
-        img = cv.Mat(img_ori)
+        img = cv.UMat(img_ori)
 
         timer = cv.getTickCount()
         height, width, channels = img_ori.shape
