@@ -25,14 +25,12 @@ class obj_detector:
     def set_photo(self, img):
         self.photo_target = cv.imread(img)
 
-    def detect_obj(self, frame=None):
+    def detect_obj(self):
         # init
         self.listObj = {}
         self.hasDetected = True
-        if frame != None:
-            img_ori = frame
-        else:
-            img_ori = self.photo_target
+
+        img_ori = self.photo_target
         img = cv.UMat(img_ori)
 
         timer = cv.getTickCount()
