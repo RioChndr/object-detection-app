@@ -7,10 +7,9 @@ class obj_detector:
     detectedObj = []
     listObj = {}
     capVideo = None
-    
 
     def __init__(self, weightModel, configModel, namesModel):
-        
+
         self.net = cv.dnn.readNet(weightModel, configModel)
         self.classes = []
         with open(namesModel, 'r') as f:
@@ -26,20 +25,23 @@ class obj_detector:
     def set_photo(self, img):
         self.photo_target = cv.imread(img)
 
-    def detect_obj(self):
+    def detect_obj(self, frame=None):
         # init
         self.listObj = {}
         self.hasDetected = True
-        img = self.photo_target
+        if frame != None:
+            img_ori = frame
+        else:
+            img_ori = self.photo_target
+        img = cv.Mat(img_ori)
 
         timer = cv.getTickCount()
-
-        # img = cv.resize(img, None, fx=0.4, fy=0.4)
-        height, width, channels = img.shape
+        height, width, channels = img_ori.shape
         net = self.net
         blob = cv.dnn.blobFromImage(
             img, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
         net.setInput(blob)
+        # net.setPreferableTarget(cv.dnn.DNN_TARGET_OPENCL)
         outs = net.forward(self.output_layers)
 
         boxes = []
@@ -76,7 +78,6 @@ class obj_detector:
                 detected_object.append([
                     class_ids[i],
                     label,
-                    color,
                     boxes[i]
                 ])
         self.detectedObj = detected_object
@@ -85,6 +86,7 @@ class obj_detector:
 
     def label_img(self, bbox, label, color):
         img = self.photo_target
+
         font = cv.FONT_HERSHEY_PLAIN
         x, y, w, h = bbox
         x, y, w, h = int(x), int(y), int(w), int(h)
@@ -96,13 +98,12 @@ class obj_detector:
         self.photo_target = img
 
     def label_obj(self):
-        # if not self.hasDetected:
         self.detect_obj()
         for obj in self.detectedObj:
-            pos_obj = obj[3]
-            class_obj = obj[1]
             id_class_obj = obj[0]
-            color_obj = obj[2]
+            class_obj = obj[1]
+            pos_obj = obj[2]
+            color_obj = self.colors[id_class_obj]
             self.label_img(pos_obj, class_obj, color_obj)
             if class_obj in self.listObj:
                 self.listObj[class_obj] += 1
@@ -115,14 +116,14 @@ class obj_detector:
     def get_image(self):
         # Change from BGR (opencv) to RGB for tkinter
         return self.cvrt_img(self.photo_target)
-        
+
     def cvrt_img(self, img):
         return cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
     def capture_video(self, path):
         self.capVideo = cv.VideoCapture(path)
         return self.capVideo.isOpened()
-    
+
     def read_frame(self):
         ret, frame = self.capVideo.read()
         return frame
