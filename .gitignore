@@ -3,3 +3,12 @@ layout.pyc
 yolov3/yolov3.weights
 yolov3/yolo_tiny/*
 yolov3/yolo_tiny/*
+mobilenet_v2/checkpoint
+mobilenet_v2/frozen_inference_graph.pb
+mobilenet_v2/model.ckpt.data-00000-of-00001
+mobilenet_v2/model.ckpt.index
+mobilenet_v2/model.ckpt.meta
+mobilenet_v2/obj_name.txt
+mobilenet_v2/pipeline.config
+mobilenet_v2/ssd_mobilenet_v2_coco_2018_03_29.pbtxt
+mobilenet_v2/saved_model/saved_model.pb
