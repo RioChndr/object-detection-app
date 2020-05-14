@@ -1,7 +1,7 @@
-import brain
+from brain import obj_detector
+import cv2 as cv
 
-
-class TrackerSystem(brain):
+class TrackerSystem(obj_detector):
     objects_tracked = []
     frame_for_detect = 1
     number_frame = 0  # Iteration
@@ -123,7 +123,7 @@ class TrackerSystem(brain):
         pass
 
     def append_obj_tracker(self, tracker, img, bbox, class_id_label):
-        tracker.init(img, bbox)
+        tracker.init(img, tuple(bbox))
         self.objects_tracked.append([tracker, class_id_label, bbox])
 
     def extract_frame(self, frame, number_frame):

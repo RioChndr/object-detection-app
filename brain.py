@@ -25,11 +25,12 @@ class obj_detector:
     def set_photo(self, img):
         self.photo_target = cv.imread(img)
 
-    def detect_obj(self):
+    def detect_obj(self, frame = None):
         # init
         self.listObj = {}
         self.hasDetected = True
-
+        if frame is not None:
+            self.photo_target = frame
         img_ori = self.photo_target
         img = cv.UMat(img_ori)
 
@@ -42,16 +43,14 @@ class obj_detector:
         # net.setPreferableTarget(cv.dnn.DNN_TARGET_OPENCL)
         outs = net.forward(self.output_layers)
 
-        boxes = []
-        class_ids = []
-        confidences = []
+        self.detectedObj = []
 
         for out in outs:
             for detection in out:
                 scores = detection[5:]
                 class_id = np.argmax(scores)
                 confidence = scores[class_id]
-                if confidence > 0:
+                if confidence > .5:
                     center_x = int(detection[0] * width)
                     center_y = int(detection[1] * height)
                     w = int(detection[2] * width)
@@ -59,28 +58,13 @@ class obj_detector:
 
                     x = int(center_x - w / 2)
                     y = int(center_y - h / 2)
-
-                    boxes.append([x, y, w, h])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
-
-        indexes = cv.dnn.NMSBoxes(boxes, confidences, .5, .4)
-        # print(class_ids)
-
-        detected_object = []
-        for i in range(len(boxes)):
-            if i in indexes:
-                x, y, w, h = boxes[i]
-                label = str(self.classes[class_ids[i]])
-                color = self.colors[class_ids[i]]
-                detected_object.append([
-                    class_ids[i],
-                    label,
-                    boxes[i]
-                ])
-        self.detectedObj = detected_object
+                    self.detectedObj.append([
+                        class_id,
+                        str(self.classes[class_id]),
+                        [x,y,w,h]
+                    ])
         self.time_process = (cv.getTickCount() - timer) / cv.getTickFrequency()
-        return detected_object
+        return self.detectedObj
 
     def label_img(self, bbox, label, color):
         img = self.photo_target
