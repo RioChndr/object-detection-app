@@ -3,7 +3,7 @@ import cv2 as cv
 
 class TrackerSystem(obj_detector):
     objects_tracked = []
-    frame_for_detect = 1
+    frame_for_detect = 20
     number_frame = 0  # Iteration
     tracker_type = "CSRT"
 
@@ -40,7 +40,7 @@ class TrackerSystem(obj_detector):
         # Every [frame_for_detect] frame, do detect
         self.frame_for_detect = frame_for_detect
 
-    def is_inside_box(box_1, box_2):
+    def is_inside_box(self, box_1, box_2):
         x1, y1, w1, h1 = box_1
         x2, y2, w2, h2 = box_2
 
@@ -52,10 +52,17 @@ class TrackerSystem(obj_detector):
             if center2_y > y1 and center2_y < h1 + y1:
                 return True
         return False
+    
+    def centroid(self, box):
+        x, y, w, h = box
+        return [
+            (w / 2) + x,
+            (h / 2) + y
+        ]
 
     def is_out_frame(self, bbox):
         # Init
-        f_width, f_height, channels = self.photo_target
+        f_width, f_height, channels = self.photo_target.shape
 
         f_width = f_width - (f_width * .005)  # dikurangi 2 persen
         f_height = f_height - (f_height * .005)  # dikurangi 2 persen
@@ -79,11 +86,10 @@ class TrackerSystem(obj_detector):
             for obj in detected_obj:
                 class_id, label, pos_obj = obj
 
-                # Check, is current object is collapsed with object tracked,
-                # if so, then delete it without check is object has different class id
+                # find the nearest point/coordinate
                 i = 0
                 for obj_tracked in self.objects_tracked:
-                    pos_obj_tracked = obj_tracked[3]
+                    pos_obj_tracked = obj_tracked[2]
 
                     is_there = self.is_inside_box(pos_obj_tracked, pos_obj)
                     if is_there:
@@ -126,15 +132,19 @@ class TrackerSystem(obj_detector):
         tracker.init(img, tuple(bbox))
         self.objects_tracked.append([tracker, class_id_label, bbox])
 
+    # RUN THIS TRACKER !!
     def extract_frame(self, frame, number_frame):
         self.number_frame = number_frame
         self.photo_target = frame
 
+        timer = cv.getTickCount()
         if self.number_frame == 0 or number_frame % self.frame_for_detect == 0:
             self.detect_obj_frame()
         else:
             self.update_track_object()
         self.label_obj_tracker()
+        self.time_process = (cv.getTickCount() - timer) / cv.getTickFrequency()
+        return self.get_image()
 
     def label_obj_tracker(self):
         for obj in self.objects_tracked:
