@@ -1,0 +1,1 @@
+python3 TA2020.py

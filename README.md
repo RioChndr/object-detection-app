@@ -19,5 +19,9 @@ or
 
 > python TA2020.py
 
+or 
+
+> ./run.sh
+
 # Note 
 Why i Choose YOLO as pre-trained model for this project ?, because that's the most accurate pre-trained model than other pre-trained. even though my laptop need 2 second to detect object on image, but maybe other machine could run this faster than that (based claim from developer YOLO that this framework could run 1000% faster on GPU)
