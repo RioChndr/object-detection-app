@@ -7,6 +7,7 @@ class obj_detector:
     detectedObj = []
     listObj = {}
     capVideo = None
+    photo_target = None
 
     def __init__(self, weightModel, configModel, namesModel):
 
