@@ -4,7 +4,7 @@
 - Install PIP
 - install library opencv, pillow
 
-> pip install opencv-contrib-python3
+> pip install opencv-contrib-python
 
 > pip install pillow
 
