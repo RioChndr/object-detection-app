@@ -1,6 +1,7 @@
 import layout
 import tkinter as tk
 import cv2 as cv
+import copy
 from brain import obj_detector as brain_obj_detector
 from brainTracker import TrackerSystem
 from tkinter import filedialog
@@ -27,8 +28,11 @@ class ObjectDetector:
 
     def findFile(self):
         FilePath = filedialog.askopenfilename()
-        if FilePath is None:
+        
+        # When user close filedialog
+        if len(FilePath) == 0:
             return
+        
         photoFormats = ['png', 'jpg', 'jpeg', 'gif']
         videoFormats = ['mp4', 'mkv', '3gp']
 
@@ -87,6 +91,7 @@ class ObjectDetector:
             return
 
         frstFrame = self.brain_tracker.read_frame()
+        self.thumpnail = copy.deepcopy(frstFrame)
         frstFrame = self.brain_tracker.cvrt_img(frstFrame)
         frstFrame = Image.fromarray(frstFrame)
         self.showImage2Panel(frame=frstFrame)
@@ -139,9 +144,16 @@ class ObjectDetector:
         layout.setTxtLastSpd(time_consumn)
 
         detectedObj = self.brain_tracker.listObj
-        layout.setInfo(detectedObj)
+        countedObj = self.brain_tracker.objects_counted
+        layout.setInfo(detectedObj, countedObj)
 
         layout.rootWindow.after(self.DELAYWINDOW, self.updateDetectorVideo)
+
+    def selectROI(self):
+        new_thumpnail = self.brain_tracker.set_ROI(self.thumpnail)
+        new_thumpnail = self.brain_tracker.cvrt_img(new_thumpnail)
+        new_thumpnail = Image.fromarray(new_thumpnail)
+        self.showImage2Panel(frame=new_thumpnail)
 
 
 objDetector = ObjectDetector('yolov3/yolov3.weights',
@@ -150,5 +162,6 @@ objDetector = ObjectDetector('yolov3/yolov3.weights',
 
 layout.runButton.config(command=objDetector.runDetector)
 layout.chooseFile.config(command=objDetector.findFile)
+layout.setROIbtn.config(command=objDetector.selectROI)
 
 layout.rootWindow.mainloop()  # put this at end file
