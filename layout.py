@@ -1,6 +1,8 @@
 from tkinter import *
+from tkinter import messagebox
 from tkinter import ttk
 from tkinter.font import Font
+
 
 # configure GUI
 
@@ -17,7 +19,7 @@ chooseFile = Button(rootWindow, text="Choose Video/Photo",
 chooseFile.grid(row=0, column=1, sticky=W)
 
 runButton = Button(rootWindow, text="RUN", padx=5,
-                      pady=5, width=20, height=2)
+                   pady=5, width=20, height=2)
 runButton.grid(row=0, column=2)
 
 showImage = Label(rootWindow, text="Display Video")
@@ -95,3 +97,7 @@ def setInfo(dataOnFrame, dataCounted=None):
         info = "{}{}:{}\n".format(info, k, v)
 
     txtInfoDetail.set(info)
+
+
+def set_messagebox_info(title, text):
+    messagebox.showinfo(title, text)
