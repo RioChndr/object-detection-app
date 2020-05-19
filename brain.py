@@ -26,7 +26,7 @@ class obj_detector:
     def set_photo(self, img):
         self.photo_target = cv.imread(img)
 
-    def detect_obj(self, frame = None):
+    def detect_obj(self, frame=None):
         # init
         self.listObj = {}
         self.hasDetected = True
@@ -62,7 +62,7 @@ class obj_detector:
                     self.detectedObj.append([
                         class_id,
                         str(self.classes[class_id]),
-                        [x,y,w,h]
+                        [x, y, w, h]
                     ])
         self.time_process = (cv.getTickCount() - timer) / cv.getTickFrequency()
         return self.detectedObj
