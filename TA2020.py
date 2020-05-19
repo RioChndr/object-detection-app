@@ -8,12 +8,12 @@ from tkinter import filedialog
 from PIL import ImageTk, Image
 
 
-class ObjectDetector:
+class ObjectDetectorApp:
 
     PHOTO = "Photo"
     VIDEO = "Video"
     DELAYWINDOW = 100
-    current_frame = 0
+    count_frame = 0
 
     selectedFile = {
         'path': None,
@@ -28,11 +28,11 @@ class ObjectDetector:
 
     def findFile(self):
         FilePath = filedialog.askopenfilename()
-        
+
         # When user close filedialog
         if len(FilePath) == 0:
             return
-        
+
         photoFormats = ['png', 'jpg', 'jpeg', 'gif']
         videoFormats = ['mp4', 'mkv', '3gp']
 
@@ -63,6 +63,7 @@ class ObjectDetector:
             self.showVideo2Panel()
             return
         self.showImage2Panel(self.selectedFile['path'])
+
     def showImage2Panel(self, path=None, frame=None):
         if path is not None:
             loadImg = Image.open(path)
@@ -130,9 +131,10 @@ class ObjectDetector:
         self.updateDetectorVideo()
 
     def updateDetectorVideo(self):
-        self.current_frame += 1
+        self.count_frame += 1
         frame = self.brain_tracker.read_frame()
-        result = self.brain_tracker.extract_frame(frame, self.current_frame)
+        result = self.brain_tracker.track_object_inframe(
+            frame, self.count_frame)
 
         # time process
         time_consumn = self.brain_tracker.time_process
@@ -150,18 +152,21 @@ class ObjectDetector:
         layout.rootWindow.after(self.DELAYWINDOW, self.updateDetectorVideo)
 
     def selectROI(self):
+        layout.set_messagebox_info(
+            "Setting ROI", "Select area ROI and press ENTER to save it or ESC to cancel")
         new_thumpnail = self.brain_tracker.set_ROI(self.thumpnail)
         new_thumpnail = self.brain_tracker.cvrt_img(new_thumpnail)
         new_thumpnail = Image.fromarray(new_thumpnail)
         self.showImage2Panel(frame=new_thumpnail)
 
 
-objDetector = ObjectDetector('yolov3/yolov3.weights',
-                             'yolov3/yolov3.cfg',
-                             'yolov3/coco.names')
+if __name__ == "__main__":
+    objDetector = ObjectDetectorApp('yolov3/yolov3.weights',
+                                    'yolov3/yolov3.cfg',
+                                    'yolov3/coco.names')
 
-layout.runButton.config(command=objDetector.runDetector)
-layout.chooseFile.config(command=objDetector.findFile)
-layout.setROIbtn.config(command=objDetector.selectROI)
+    layout.runButton.config(command=objDetector.runDetector)
+    layout.chooseFile.config(command=objDetector.findFile)
+    layout.setROIbtn.config(command=objDetector.selectROI)
 
-layout.rootWindow.mainloop()  # put this at end file
+    layout.rootWindow.mainloop()  # put this at end file
