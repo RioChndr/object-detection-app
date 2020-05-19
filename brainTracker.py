@@ -2,9 +2,10 @@ from brain import obj_detector
 import cv2 as cv
 import copy
 
+
 class TrackerSystem(obj_detector):
     objects_tracked = []
-    objects_counted = {}    
+    objects_counted = {}
     frame_for_detect = 20
     number_frame = 0  # Iteration
     tracker_type = "CSRT"
@@ -55,11 +56,10 @@ class TrackerSystem(obj_detector):
             if center2_y > y1 and center2_y < h1 + y1:
                 return True
         return False
-    
 
     def is_out_frame(self, bbox):
         # Init
-        f_height,f_width, channels = self.photo_target.shape
+        f_height, f_width, channels = self.photo_target.shape
 
         f_width = f_width - (f_width * .005)  # dikurangi 2 persen
         f_height = f_height - (f_height * .005)  # dikurangi 2 persen
@@ -86,7 +86,7 @@ class TrackerSystem(obj_detector):
                 # find the nearest point/coordinate
                 i = 0
                 old_object = [None, None, None, None]
-                old_object[3] = False # Default value
+                old_object[3] = False  # Default value
                 for obj_tracked in self.objects_tracked:
                     pos_obj_tracked = obj_tracked[2]
 
@@ -102,6 +102,7 @@ class TrackerSystem(obj_detector):
         return
 
     def update_track_object(self):
+        delete_id_object = []
         if len(self.objects_tracked) > 0:
             i = 0
             for obj in self.objects_tracked:
@@ -114,14 +115,26 @@ class TrackerSystem(obj_detector):
                         del self.objects_tracked[i]
                     else:
                         self.objects_tracked[i][2] = new_bbox
+
+                        j = 0
+                        pos_current_obj = self.objects_tracked[i][2]
+                        for other_obj in self.objects_tracked:
+                            if i == j:
+                                continue
+                            pos_other_obj = other_obj[2]
+                            is_collapse = self.is_inside_box(
+                                pos_other_obj, pos_current_obj)
+                            if is_collapse:
+                                print("hapus id : {} ".format(j))
+                                del self.objects_tracked[j]
+                            j += 1
                 i += 1
         return
 
-    
-
-    def append_obj_tracker(self, tracker, img, bbox, class_id_label, is_counted = False):
+    def append_obj_tracker(self, tracker, img, bbox, class_id_label, is_counted=False):
         tracker.init(img, tuple(bbox))
-        self.objects_tracked.append([tracker, class_id_label, bbox, is_counted])
+        self.objects_tracked.append(
+            [tracker, class_id_label, bbox, is_counted])
 
     # RUN THIS TRACKER !!
     def extract_frame(self, frame, number_frame):
@@ -146,43 +159,41 @@ class TrackerSystem(obj_detector):
             class_label = self.classes[class_id]
             color_label = self.colors[class_id]
             if is_counted == True:
-                color_label = (237, 224, 36) # Yellow
+                color_label = (237, 224, 36)  # Yellow
                 class_label = None
             self.label_img(bbox, class_label, color_label)
             if class_label in self.listObj:
                 self.listObj[class_label] += 1
             else:
                 self.listObj[class_label] = 1
-            
-
 
     # Pos_y is position Y for ROI, area can be TOP/BOTTOM
 
     def set_ROI(self, frame):
-        ori_frame = copy.deepcopy(frame) # For copy frame,
+        ori_frame = copy.deepcopy(frame)  # For copy frame,
         font = cv.FONT_HERSHEY_PLAIN
-        color = (200,200,0)
+        color = (200, 200, 0)
         txt_info = "Beri kotak ROI dengan klik beberapa ruang, lalu tekan enter jika selesai"
-        cv.putText(frame, txt_info, (10,10), font, 1, color)
+        cv.putText(frame, txt_info, (10, 10), font, 1, color)
         self.box_ROI = cv.selectROI(frame)
         cv.waitKey(1)
         cv.destroyAllWindows()
-        
+
         return self.show_ROI_box(ori_frame)
-        
+
     def check_objects_trough_ROI(self):
-        
+
         for i in range(len(self.objects_tracked)):
             if self.objects_tracked[i][3] == True:
                 continue
             if self.is_trough_ROI(self.objects_tracked[i]) == True:
-                self.objects_tracked[i][3] = True # Is in ? YES !!
+                self.objects_tracked[i][3] = True  # Is in ? YES !!
                 self.add_object_counted(self.objects_tracked[i])
 
     def is_trough_ROI(self, obj):
-        return self.is_inside_box( self.box_ROI, obj[2])
+        return self.is_inside_box(self.box_ROI, obj[2])
 
-    def show_ROI_box(self, frame = None):
+    def show_ROI_box(self, frame=None):
         if frame is None:
             frame = self.photo_target
         color = (234, 237, 76)
